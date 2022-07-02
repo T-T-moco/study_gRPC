@@ -55,5 +55,11 @@ func main() {
 		log.Fatalln("Can't marshal to json", err)
 	}
 
-	fmt.Println(out)
+	// fmt.Println(out)
+
+	readEmployee := &pb.Employee{}
+	if err := jsonpb.UnmarshalString(out, readEmployee); err != nil {
+		log.Fatalln("!Can't unmarshal from json", err)
+	}
+	fmt.Println(readEmployee)
 }
