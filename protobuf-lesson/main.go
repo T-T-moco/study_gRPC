@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"protobuf-lesson/pb"
@@ -34,4 +35,18 @@ func main() {
 	if err := ioutil.WriteFile("test.bin", binData, 0666); err != nil {
 		log.Fatalln("Cant write", err)
 	}
+
+	in, err := ioutil.ReadFile("test.bin")
+	if err != nil {
+		log.Fatalln("Cant read file", err)
+	}
+
+	readEmployee := &pb.Employee{}
+
+	err = proto.Unmarshal(in, readEmployee)
+	if err != nil {
+		log.Fatalln("Can't deserialize", err)
+	}
+
+	fmt.Println(readEmployee)
 }
