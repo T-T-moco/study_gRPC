@@ -1,5 +1,8 @@
 https://developers.google.com/protocol-buffers/docs/proto3
 
+＊コンパイル後にimportインポートエラーが起きていた時：
+　　command: go mod tidy
+
 
 -IPATH, --proto_path={PATH}
 protoファイルのimport文のパスを特定する
