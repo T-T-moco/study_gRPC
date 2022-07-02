@@ -1,0 +1,13 @@
+【gRPCの書き方】
+1. mkdir grpc-lesson
+2. cd grpc-lesson
+3. go mod init grpc-lesson
+4. protoフォルダを作成
+5. file.protoを作成
+6. protoに内容を記述
+7. コンパイル
+　command: protoc -I. --go_put=. --go-grpc_out=. proto/*.proto
+  serviceが書いてあるとgrpcになる。クライアント側もサーバー側も作ってくれる。
+8. importエラーが起きている時は go mod tidy のコマンド。
+
+
