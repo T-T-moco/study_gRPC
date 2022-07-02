@@ -2,11 +2,10 @@ syntax = "proto3";
 
 package employee;
 
-import "protobuf-lesson/proto/date.proto";
-option go_package = "protobuf-lesson";
+option go_package = "./pb";
 
-//  protoc -I./path --go_out=./path ./path/*.proto
-// protoc -I./proto --go_out=./proto ./proto/*.proto
+import "proto/date.proto";
+
 // Scalar型
 // 最初は大文字、単語１つくらいのsシンプルな名前
 message Employee {
