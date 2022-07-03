@@ -9,6 +9,7 @@ message ListFilesResponse {
   repeated string filenames = 1;
 };
 
+// サーバーストリーミングRPC（ファイルを分割してダウンロード）
 message DownloadRequest {
   string filename = 1;
 }
@@ -16,7 +17,17 @@ message DownloadResponse {
   bytes data = 1;
 }
 
+// クライアントストリーミングRPC（ファイルを分割してアップロード）
+message UploadRequest {
+  bytes data = 1; // データ
+};
+message UploadResponse {
+  int32 size = 1; // 受け取ったデータのサイズ
+}
+
+
 service FileService {
   rpc ListFiles (ListFilesRequest) returns (ListFilesResponse);
   rpc Download (DownloadRequest) returns (stream DownloadResponse); // サーバーストリーミングRPCの場合、レスポンスの前にstream-keywordをつける必要がある
+  rpc Upload (stream UploadRequest) returns (UploadResponse); // クライアントストリーミングRPC リクエストの前にstreamをつける必要がある
 };
