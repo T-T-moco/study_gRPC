@@ -44,6 +44,9 @@ func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (*pb.Lis
 	return res, nil
 }
 
+/*****************************************************
+* サーバーストリーミングRPC（１リクエストに複数レスポンス）
+******************************************************/
 // サーバーストリーミングRPC（１リクエストに複数レスポンス）
 func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadServer) error {
 	fmt.Println("Download was invoked")
@@ -77,7 +80,9 @@ func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadS
 	return nil
 }
 
-// クライアントストリーミングRPC（複数リクエストに１レスポンス）
+/*****************************************************
+* クライアントストリーミングRPC（複数リクエストに１レスポンス）
+******************************************************/
 // pb/file.pb.goのtype FileServiceServer interface の中にある Uploadメソットを参照。引数にFileService_UploadServerが必要 / 戻り値はerrorであることがわかる
 func (*server) Upload(stream pb.FileService_UploadServer) error { // <- 戻り値はerror
 	fmt.Println("Upload was invoked")
@@ -100,6 +105,40 @@ func (*server) Upload(stream pb.FileService_UploadServer) error { // <- 戻り�
 	}
 }
 
+/*****************************************************
+* 双方向ストリーミングRPC（複数リクエストに複数レスポンス）
+******************************************************/
+func (*server) UploadAndNotifyProgress(stream pb.FileService_UploadAndNotifyProgressServer) error {
+	fmt.Println("UploadAndNotifyProgress was invoked")
+
+	size := 0 // 受信したサイズのデータを格納する変数を用意
+
+	for {
+		req, err := stream.Recv() // クライアントからストリーム経由で複数のリクエストを受け取れるようにする
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		data := req.GetData() //リクエストからデータを取り出し
+		log.Printf("received data: %v", data)
+		size += len(data) // クライアントから受信したデータのサイズをsize変数に足し合わせる
+
+		res := &pb.UploadAndNotifyProgressResponse{
+			Msg: fmt.Sprintf("received %vbytes", size), // ここまでに受信したデータのサイズをメッセージとしてレスポンスに入れる
+		}
+		err = stream.Send(res) // レスポンスを返却
+		if err != nil {
+			return err // エラーがあればエラーをレスポンス
+		}
+	}
+}
+
+/*****************************************************
+* main関数
+******************************************************/
 func main() {
 	lis, err := net.Listen("tcp", "localhost: 30000")
 	if err != nil {
