@@ -22,7 +22,8 @@ func main() {
 	client := pb.NewFileServiceClient(conn)
 	// callListFiles(client) // 普通の関数を呼び出す
 	// callDownload(client) // メイン関数からサーバーストリーミングRPCを呼び出す
-	CallUpload(client) // メイン関数からクライアントストリーミングRPCを呼び出す
+	// CallUpload(client) // メイン関数からクライアントストリーミングRPCを呼び出す
+	CallUploadAndNotifyProgress(client) // メイン関数から双方向ストリーミングRPCを呼び出す
 }
 
 func callListFiles(client pb.FileServiceClient) {
@@ -151,10 +152,27 @@ func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
 			time.Sleep(1 * time.Second) // スリープ処理
 		}
 
-		err := stream.CloseSend() // リクエストの終了を通知
-		// レスポンスの処理は別のボルーチン？で実装するのでCallUpload関数で使用したCloseAndRecvメソッドではなく、CloseSendメソッドを使用すること。
+		err := stream.CloseSend() // stream.CloseSendが実行されたらサーバー側にエンドファイルが通知される(io.EOF)
+		// ※レスポンスの処理は別のボルーチン？で実装するのでCallUpload関数で使用したCloseAndRecvメソッドではなく、CloseSendメソッドを使用すること。
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}()
+
+	// response
+	ch := make(chan struct{}) // コルーチンを制御するためのチャネルを用意し
+	go func() {
+		for {
+			res, err := stream.Recv() // サーバーからのレスポンスを受け取る
+			if err == io.EOF {
+				break // エンドオブファイルが到達したらbreakでループを抜ける
+			}
+			if err != nil {
+				log.Fatalln(err)
+			}
+			log.Printf("received message: %v", res.GetMsg()) // その他のエラーハンドリング：res.GetMsg()でレスポンスで受け取った内容を表示
+		}
+		close(ch) // チャネルをcloseすることで待機していたこのチャネルを抜けて全体の処置が終了する
+	}()
+	<-ch // 終了を待機させる
 }
