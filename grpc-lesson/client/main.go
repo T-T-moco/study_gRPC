@@ -108,3 +108,53 @@ func CallUpload(client pb.FileServiceClient) {
 
 	log.Printf("received data size: %v", res.GetSize())
 }
+
+/*****************************************************
+* 双方向ストリーミングRPC（複数リクエストに複数レスポンス）
+******************************************************/
+func CallUploadAndNotifyProgress(client pb.FileServiceClient) {
+	// 処理の半分はCallUpload関数と同じなため、コピペ
+	filename := "sports.txt"
+	path := "/Users/takemasatomoko/Desktop/source/practice/gRPC/grpc-lesson/strage/" + filename // クライアントのストレージであると想定
+
+	file, err := os.Open(path) // ファイルを開く
+	if err != nil {            // ファイルを開けなかったら
+		log.Fatalln(err)
+	}
+	defer file.Close() // ファイルをクローズする
+
+	stream, err := client.UploadAndNotifyProgress(context.Background()) // ストリームを取得
+	if err != nil {                                                     // エラーハンドリング
+		log.Fatalln(err)
+	}
+
+	// 双方向ストリーミングRPCでは複数のリクエストを送信しつつ、複数のレスポンスも受け取る必要がある。
+	// これを実現するためにボルーチン？を使用した平行処理を行う
+
+	// request
+	buf := make([]byte, 5) // データ格納用のバッファを用意
+	go func() {
+		for {
+			n, err := file.Read(buf) // ファイルの内容をバッファに格納する
+			if n == 0 || err == io.EOF {
+				break // データの読み込み終了時にループを抜ける
+			}
+			if err != nil { // その他のエラーではerrを表示
+				log.Fatalln(err)
+			}
+
+			req := &pb.UploadAndNotifyProgressRequest{Data: buf[:n]} // リクエストのメッセージを作成し
+			sendErr := stream.Send(req)                              // ストリームを返してリクエストを送信する
+			if sendErr != nil {                                      // エラーハンドリング
+				log.Fatalln(err)
+			}
+			time.Sleep(1 * time.Second) // スリープ処理
+		}
+
+		err := stream.CloseSend() // リクエストの終了を通知
+		// レスポンスの処理は別のボルーチン？で実装するのでCallUpload関数で使用したCloseAndRecvメソッドではなく、CloseSendメソッドを使用すること。
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
+}
