@@ -1,5 +1,7 @@
 package main
 
+// サーバーからファイルを分割ダウンロードする
+
 import (
 	"context"
 	"fmt"
