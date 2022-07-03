@@ -3,6 +3,7 @@ package main
 // サーバーからファイルを分割ダウンロードする
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"grpc-lesson/pb"
@@ -43,6 +44,7 @@ func (*server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (*pb.Lis
 	return res, nil
 }
 
+// サーバーストリーミングRPC（１リクエストに複数レスポンス）
 func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadServer) error {
 	fmt.Println("Download was invoked")
 
@@ -73,6 +75,29 @@ func (*server) Download(req *pb.DownloadRequest, stream pb.FileService_DownloadS
 		time.Sleep(1 * time.Second)
 	}
 	return nil
+}
+
+// クライアントストリーミングRPC（複数リクエストに１レスポンス）
+// pb/file.pb.goのtype FileServiceServer interface の中にある Uploadメソットを参照。引数にFileService_UploadServerが必要 / 戻り値はerrorであることがわかる
+func (*server) Upload(stream pb.FileService_UploadServer) error { // <- 戻り値はerror
+	fmt.Println("Upload was invoked")
+
+	var buf bytes.Buffer // クライアントからアップロードされたバッファを格納するための変数を用意
+	for {
+		req, err := stream.Recv() // クライアントからストリーム経由で複数のリクエストを受け取る
+		if err == io.EOF {        // クライアントからの終了信号が到達した場合
+			res := &pb.UploadResponse{Size: int32(buf.Len())} // int32にキャストしたバッファのサイズをメッセージに含め
+			return stream.SendAndClose(res)                   // 引数にresを渡し、サーバーからのレスポンスを返す
+		}
+		if err != nil { // その他のエラーの場合
+			return err
+		}
+
+		data := req.GetData() // リクエストからのデータを変数に格納し、その内容を出力する
+		log.Printf("received data(bytes): %v", data)
+		log.Printf("received data(string): %v", string(data))
+		buf.Write(data) // データをバッファに書き込む
+	}
 }
 
 func main() {
