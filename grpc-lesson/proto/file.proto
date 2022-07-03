@@ -29,11 +29,24 @@ message UploadResponse {
   int32 size = 1; // 受け取ったデータのサイズ
 }
 
+/*****************************************************
+* 双方向ストリーミングRPC（複数リクエストに１レスポンス）
+******************************************************/
+// クライアントからファイルを分割して送信し、分割ファイルが届く度にサーバーから進捗状況のメッセージを返されるメソッド
+message UploadAndNotifyProgressRequest {
+  bytes data = 1;
+}
+message UploadAndNotifyProgressResponse {
+  string msg = 1;
+}
+
 
 service FileService {
   rpc ListFiles (ListFilesRequest) returns (ListFilesResponse);
   // サーバーストリーミングRPCの場合、レスポンスの前にstream-keywordをつける必要がある
   rpc Download (DownloadRequest) returns (stream DownloadResponse);
   // クライアントストリーミングRPC リクエストの前にstreamをつける必要がある
-  rpc Upload (stream UploadRequest) returns (UploadResponse); 
+  rpc Upload (stream UploadRequest) returns (UploadResponse);
+  // 双方向ストリーミングRPC
+  rpc UploadAndNotifyProgress (stream UploadAndNotifyProgressRequest) returns (stream UploadAndNotifyProgressResponse);
 };
