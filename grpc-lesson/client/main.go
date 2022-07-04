@@ -13,26 +13,36 @@ import (
 )
 
 func main() {
-	conn, err := grpc.Dial("localhost:30000", grpc.WithInsecure())
-	if err != nil {
+	// まずはサーバーとの接続を確立
+	conn, err := grpc.Dial("localhost:30000", grpc.WithInsecure()) // grpc.WithInsecureはセキュリティが微妙なので非推奨
+	if err != nil {                                                // エラーハンドリング
 		log.Fatalf("Failed to connect: %v", err)
 	}
-	defer conn.Close()
+	defer conn.Close() // main関数の終了時に、必ずコネクションが終了するようにする
 
-	client := pb.NewFileServiceClient(conn)
-	// callListFiles(client) // 普通の関数を呼び出す
+	client := pb.NewFileServiceClient(conn) // FileServiceClientを取得することができる
+	// callListFiles(client) // メイン関数からUnary RPCを呼び出す
 	// callDownload(client) // メイン関数からサーバーストリーミングRPCを呼び出す
 	// CallUpload(client) // メイン関数からクライアントストリーミングRPCを呼び出す
 	CallUploadAndNotifyProgress(client) // メイン関数から双方向ストリーミングRPCを呼び出す
 }
 
+/*****************************************************
+* Unary RPC（１リクエストに１レスポンス）
+******************************************************/
 func callListFiles(client pb.FileServiceClient) {
+	/*
+		file_grpc.pb.goの[type FileServiceClient interface]を確認。
+		>> ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
+		1. 第一引数はcontext.Backgroundで空のcontextを渡す
+		2. 第二引数は*ListFilesRequest
+	*/
 	res, err := client.ListFiles(context.Background(), &pb.ListFilesRequest{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	fmt.Println(res.GetFilenames())
+	fmt.Println(res.GetFilenames()) // ファイル名の一覧を取得
 }
 
 /*****************************************************

@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FileServiceClient interface {
+	// Unary RPC
 	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 	// サーバーストリーミングRPCの場合、レスポンスの前にstream-keywordをつける必要がある
 	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (FileService_DownloadClient, error)
@@ -149,6 +150,7 @@ func (x *fileServiceUploadAndNotifyProgressClient) Recv() (*UploadAndNotifyProgr
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility
 type FileServiceServer interface {
+	// Unary RPC
 	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	// サーバーストリーミングRPCの場合、レスポンスの前にstream-keywordをつける必要がある
 	Download(*DownloadRequest, FileService_DownloadServer) error

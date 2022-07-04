@@ -4,6 +4,9 @@ package file;
 
 option go_package = "./pb";
 
+/*****************************************************
+* Unary RPC（１リクエストに１レスポンス）
+******************************************************/
 message ListFilesRequest {};
 message ListFilesResponse {
   repeated string filenames = 1;
@@ -42,6 +45,7 @@ message UploadAndNotifyProgressResponse {
 
 
 service FileService {
+  // Unary RPC
   rpc ListFiles (ListFilesRequest) returns (ListFilesResponse);
   // サーバーストリーミングRPCの場合、レスポンスの前にstream-keywordをつける必要がある
   rpc Download (DownloadRequest) returns (stream DownloadResponse);
